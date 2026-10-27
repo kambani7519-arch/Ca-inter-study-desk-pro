@@ -1,0 +1,6 @@
+{
+  "name": "CA Inter Study Desk Pro",
+  "description": "ICAI CA Intermediate (New Scheme) preparation suite with AI 30:70 test generator, strict examiner answer checker with handwriting vision, syllabus tracker, mistake vault, and commute voice rapid-fire revision.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

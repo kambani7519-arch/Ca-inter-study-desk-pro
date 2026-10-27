@@ -1,0 +1,250 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Student profile for ICAI CA Intermediate preparation",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the student"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the student"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full name of the student"
+        },
+        "attempt": {
+          "type": "string",
+          "description": "Target exam attempt e.g. Jan 2027"
+        },
+        "targetGroup": {
+          "type": "string",
+          "description": "ICAI group enrollment e.g. Both Groups, Group 1, Group 2"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp via serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp via serverTimestamp()"
+        }
+      },
+      "required": ["userId", "email", "fullName", "attempt", "targetGroup", "createdAt"]
+    },
+    "TopicProgress": {
+      "title": "TopicProgress",
+      "description": "Tracking progress of an individual ICAI syllabus chapter or topic",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "topicId": {
+          "type": "string",
+          "description": "Unique topic ID or custom topic ID"
+        },
+        "paperId": {
+          "type": "integer",
+          "description": "ICAI Paper ID (1 to 6)"
+        },
+        "chapterName": {
+          "type": "string",
+          "description": "Chapter name or standard"
+        },
+        "topicTitle": {
+          "type": "string",
+          "description": "Topic or standard subtopic title"
+        },
+        "icaiRef": {
+          "type": "string",
+          "description": "ICAI reference citation e.g. AS 10 / Sec 135"
+        },
+        "isCustom": {
+          "type": "boolean",
+          "description": "Whether manually added by the student"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PENDING", "DONE", "REVISE"],
+          "description": "Current completion status"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Student notes"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last modified timestamp via serverTimestamp()"
+        }
+      },
+      "required": ["userId", "topicId", "paperId", "chapterName", "topicTitle", "status"]
+    },
+    "MistakeVaultItem": {
+      "title": "MistakeVaultItem",
+      "description": "Question recorded for spaced repetition review",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "mistakeId": {
+          "type": "string",
+          "description": "Unique ID of mistake item"
+        },
+        "paperId": {
+          "type": "integer",
+          "description": "Paper ID 1 to 6"
+        },
+        "subjectName": {
+          "type": "string",
+          "description": "Subject paper title"
+        },
+        "topicOrStandard": {
+          "type": "string",
+          "description": "Chapter, AS, or SA reference"
+        },
+        "question": {
+          "type": "string",
+          "description": "Question text"
+        },
+        "studentAttempt": {
+          "type": "string",
+          "description": "Student submission answer"
+        },
+        "marksLost": {
+          "type": "number",
+          "description": "Marks deducted"
+        },
+        "totalMarks": {
+          "type": "number",
+          "description": "Total marks for the question"
+        },
+        "missingKeywords": {
+          "type": "string",
+          "description": "Comma separated missing keywords or provisions"
+        },
+        "toppersSolution": {
+          "type": "string",
+          "description": "ICAI benchmark solution"
+        },
+        "reviewIntervalDays": {
+          "type": "integer",
+          "description": "Current spaced repetition interval in days (1, 3, 7, 14, 30)"
+        },
+        "nextReviewDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Calculated next review timestamp"
+        },
+        "isMastered": {
+          "type": "boolean",
+          "description": "Whether successfully recalled through 30-day stage"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp via serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp via serverTimestamp()"
+        }
+      },
+      "required": [
+        "userId",
+        "mistakeId",
+        "paperId",
+        "subjectName",
+        "topicOrStandard",
+        "question",
+        "marksLost",
+        "totalMarks",
+        "reviewIntervalDays",
+        "isMastered",
+        "createdAt"
+      ]
+    },
+    "TestRecord": {
+      "title": "TestRecord",
+      "description": "Historical record of 30:70 test attempts",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "testId": {
+          "type": "string",
+          "description": "Unique test attempt ID"
+        },
+        "paperId": {
+          "type": "integer",
+          "description": "Paper ID 1 to 6"
+        },
+        "paperName": {
+          "type": "string",
+          "description": "Paper Name"
+        },
+        "chapterOrTopic": {
+          "type": "string",
+          "description": "Chapter or topic covered"
+        },
+        "totalMarks": {
+          "type": "integer",
+          "description": "Maximum marks (20, 30, 50, 100)"
+        },
+        "marksScored": {
+          "type": "number",
+          "description": "Total marks scored"
+        },
+        "mcqScore": {
+          "type": "number",
+          "description": "Marks in 30% MCQ section"
+        },
+        "descriptiveScore": {
+          "type": "number",
+          "description": "Marks in 70% descriptive section"
+        },
+        "dateTaken": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of test completion"
+        },
+        "summaryNotes": {
+          "type": "string",
+          "description": "Examiner evaluation summary notes"
+        }
+      },
+      "required": ["userId", "testId", "paperId", "paperName", "chapterOrTopic", "totalMarks", "marksScored", "dateTaken"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document containing ICAI exam details and account info"
+    },
+    "/users/{userId}/topics_progress/{topicId}": {
+      "schema": "TopicProgress",
+      "description": "Subcollection tracking progress and revision status of ICAI syllabus topics"
+    },
+    "/users/{userId}/mistake_vault/{mistakeId}": {
+      "schema": "MistakeVaultItem",
+      "description": "Subcollection storing questions with lost marks for spaced repetition review"
+    },
+    "/users/{userId}/test_history/{testId}": {
+      "schema": "TestRecord",
+      "description": "Subcollection recording test attempts and scores"
+    }
+  }
+}

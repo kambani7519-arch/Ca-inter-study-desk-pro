@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.fullName is string && data.fullName.size() <= 100 &&
+             data.attempt is string && data.attempt.size() <= 50 &&
+             data.targetGroup is string && data.targetGroup.size() <= 50 &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidTopicProgress(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.topicId is string && data.topicId.size() > 0 && data.topicId.size() <= 128 &&
+             data.paperId is int && data.paperId >= 1 && data.paperId <= 6 &&
+             data.chapterName is string && data.chapterName.size() <= 200 &&
+             data.topicTitle is string && data.topicTitle.size() <= 300 &&
+             (!('icaiRef' in data) || (data.icaiRef is string && data.icaiRef.size() <= 100)) &&
+             (!('isCustom' in data) || data.isCustom is bool) &&
+             data.status in ['PENDING', 'DONE', 'REVISE'] &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidMistakeVaultItem(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.mistakeId is string && data.mistakeId.size() > 0 && data.mistakeId.size() <= 128 &&
+             data.paperId is int && data.paperId >= 1 && data.paperId <= 6 &&
+             data.subjectName is string && data.subjectName.size() <= 150 &&
+             data.topicOrStandard is string && data.topicOrStandard.size() <= 200 &&
+             data.question is string && data.question.size() <= 2000 &&
+             (!('studentAttempt' in data) || (data.studentAttempt is string && data.studentAttempt.size() <= 4000)) &&
+             (data.marksLost is number || data.marksLost is int) &&
+             (data.totalMarks is number || data.totalMarks is int) &&
+             (!('missingKeywords' in data) || (data.missingKeywords is string && data.missingKeywords.size() <= 1000)) &&
+             (!('toppersSolution' in data) || (data.toppersSolution is string && data.toppersSolution.size() <= 4000)) &&
+             data.reviewIntervalDays is int && data.reviewIntervalDays >= 1 && data.reviewIntervalDays <= 365 &&
+             (!('nextReviewDate' in data) || data.nextReviewDate is timestamp) &&
+             data.isMastered is bool &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidTestRecord(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.testId is string && data.testId.size() > 0 && data.testId.size() <= 128 &&
+             data.paperId is int && data.paperId >= 1 && data.paperId <= 6 &&
+             data.paperName is string && data.paperName.size() <= 150 &&
+             data.chapterOrTopic is string && data.chapterOrTopic.size() <= 200 &&
+             data.totalMarks is int && data.totalMarks >= 1 && data.totalMarks <= 200 &&
+             (data.marksScored is number || data.marksScored is int) &&
+             (!('mcqScore' in data) || (data.mcqScore is number || data.mcqScore is int)) &&
+             (!('descriptiveScore' in data) || (data.descriptiveScore is number || data.descriptiveScore is int)) &&
+             (!('summaryNotes' in data) || (data.summaryNotes is string && data.summaryNotes.size() <= 2000));
+    }
+
+    // 1. User Profile Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if false;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'email', 'fullName', 'attempt', 'targetGroup', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'email', 'fullName', 'attempt', 'targetGroup', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'email', 'attempt', 'targetGroup', 'updatedAt']);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+
+      // 2. Syllabus Topics Progress Subcollection
+      match /topics_progress/{topicId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(topicId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().topicId == topicId &&
+                         incoming().keys().hasAll(['userId', 'topicId', 'paperId', 'chapterName', 'topicTitle', 'status']) &&
+                         incoming().keys().hasOnly(['userId', 'topicId', 'paperId', 'chapterName', 'topicTitle', 'icaiRef', 'isCustom', 'status', 'notes', 'updatedAt']) &&
+                         isValidTopicProgress(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(topicId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().topicId == existing().topicId &&
+                         isValidTopicProgress(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'notes', 'updatedAt', 'icaiRef', 'chapterName', 'topicTitle', 'isCustom']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(topicId);
+      }
+
+      // 3. Mistake Vault Subcollection
+      match /mistake_vault/{mistakeId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(mistakeId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().mistakeId == mistakeId &&
+                         incoming().keys().hasAll(['userId', 'mistakeId', 'paperId', 'subjectName', 'topicOrStandard', 'question', 'marksLost', 'totalMarks', 'reviewIntervalDays', 'isMastered', 'createdAt']) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidMistakeVaultItem(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(mistakeId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().mistakeId == existing().mistakeId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidMistakeVaultItem(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['reviewIntervalDays', 'nextReviewDate', 'isMastered', 'updatedAt', 'notes', 'studentAttempt', 'missingKeywords', 'toppersSolution', 'marksLost', 'totalMarks', 'topicOrStandard', 'subjectName', 'question']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(mistakeId);
+      }
+
+      // 4. Test History Subcollection
+      match /test_history/{testId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(testId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().testId == testId &&
+                         incoming().keys().hasAll(['userId', 'testId', 'paperId', 'paperName', 'chapterOrTopic', 'totalMarks', 'marksScored', 'dateTaken']) &&
+                         incoming().dateTaken is timestamp &&
+                         incoming().dateTaken <= request.time &&
+                         isValidTestRecord(incoming());
+
+        // Test attempts are immutable records
+        allow update: if false;
+
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(testId);
+      }
+    }
+  }
+}
